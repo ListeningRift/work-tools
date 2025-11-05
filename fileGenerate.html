@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试文件生成工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: #667eea;
+            height: 100vh;
+            padding: 15px;
+            overflow: hidden;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 15px;
+            font-size: 2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 15px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .card-container {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        @media (min-width: 1400px) {
+            .main-content {
+                grid-template-columns: 450px 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .generator-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            height: 48px;
+            flex-shrink: 0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            height: 48px;
+        }
+
+        .tab-btn:hover {
+            background: #f0f0ff;
+        }
+
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: transparent;
+        }
+
+        .generator-content {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .generator-content.active {
+            display: flex;
+        }
+
+        .form-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 3px;
+            color: #333;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus,
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 12px;
+            flex-shrink: 0;
+        }
+
+        button {
+            width: 100%;
+            padding: 8px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .preview-area {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .preview-area h2 {
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .preview-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            justify-content: center;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .preview-content img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            object-fit: contain;
+        }
+
+        .preview-content video {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .preview-content audio {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .file-info {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 6px;
+            width: 100%;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .file-info p {
+            margin: 3px 0;
+            color: #333;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .download-btn:hover {
+            box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+        }
+
+        .size-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .loading-preview {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .loading-preview .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e0e0e0;
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-preview p {
+            color: #667eea;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .form-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .form-content::-webkit-scrollbar-track {
+            background: #f0f0f0;
+            border-radius: 3px;
+        }
+
+        .form-content::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+
+        .form-content::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+
+        .preview-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .preview-content::-webkit-scrollbar-track {
+            background: #f0f0f0;
+            border-radius: 3px;
+        }
+
+        .preview-content::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+
+        .preview-content::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+            }
+
+            body {
+                overflow: auto;
+                height: auto;
+                min-height: 100vh;
+            }
+
+            .container {
+                height: auto;
+            }
+
+            .card-container {
+                overflow-y: visible;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            }
+
+            .preview-area {
+                min-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 测试文件生成工具</h1>
+
+        <div class="main-content">
+            <div class="card-container">
+                <!-- 标签页按钮 -->
+                <div class="generator-tabs">
+                    <button class="tab-btn active" onclick="switchTab('image')">📷 图片</button>
+                    <button class="tab-btn" onclick="switchTab('audio')">🎵 音频</button>
+                    <button class="tab-btn" onclick="switchTab('video')">🎬 视频</button>
+                </div>
+
+                <!-- 图片生成器 -->
+                <div class="card generator-content active" id="imageGenerator">
+                    <h2>📷 图片生成器</h2>
+                    <div class="form-content">
+                        <div class="form-group">
+                            <label>宽度 (px):</label>
+                            <input type="number" id="imgWidth" value="800" min="1" max="4000">
+                        </div>
+                        <div class="form-group">
+                            <label>高度 (px):</label>
+                            <input type="number" id="imgHeight" value="600" min="1" max="4000">
+                        </div>
+                        <div class="form-group">
+                            <label>格式:</label>
+                            <select id="imgFormat" onchange="updateSizeControl()">
+                                <option value="jpeg">JPEG</option>
+                                <option value="jpg">JPG</option>
+                                <option value="webp">WebP</option>
+                                <option value="png">PNG</option>
+                                <option value="bmp">BMP</option>
+                                <option value="gif">GIF</option>
+                                <option value="svg">SVG</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="sizeControlGroup">
+                            <label id="sizeControlLabel">图片质量 (1-100):</label>
+                            <input type="number" id="imgQuality" value="85" min="1" max="100">
+                            <small style="color: #666; font-size: 11px; display: block; margin-top: 3px;">
+                                质量越高，文件越大。PNG/BMP/GIF/SVG不支持质量调整
+                            </small>
+                        </div>
+                    </div>
+                    <button class="generate-btn" onclick="generateImage()">生成图片</button>
+                </div>
+
+                <!-- 音频生成器 -->
+                <div class="card generator-content" id="audioGenerator">
+                    <h2>🎵 音频生成器</h2>
+                    <div class="form-content">
+                        <div class="form-group">
+                            <label>时长 (秒):</label>
+                            <input type="number" id="audioDuration" value="10" min="1" max="3600">
+                        </div>
+                        <div class="form-group">
+                            <label>格式:</label>
+                            <select id="audioFormat">
+                                <option value="mp3">MP3</option>
+                                <option value="wav">WAV</option>
+                                <option value="ogg">OGG</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="audioHasSound" checked>
+                                <label for="audioHasSound">包含声音（440Hz正弦波）</label>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="generate-btn" onclick="generateAudio()">生成音频</button>
+                </div>
+
+                <!-- 视频生成器 -->
+                <div class="card generator-content" id="videoGenerator">
+                    <h2>🎬 视频生成器</h2>
+                    <div class="form-content">
+                        <div class="form-group">
+                            <label>时长 (秒):</label>
+                            <input type="number" id="videoDuration" value="5" min="1" max="300">
+                        </div>
+                        <div class="form-group">
+                            <label>格式:</label>
+                            <select id="videoFormat">
+                                <option value="mp4">MP4</option>
+                                <option value="webm">WebM</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>分辨率:</label>
+                            <select id="videoResolution">
+                                <option value="640x480">640x480 (VGA)</option>
+                                <option value="1280x720">1280x720 (HD)</option>
+                                <option value="1920x1080">1920x1080 (Full HD)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="videoHasSound" checked>
+                                <label for="videoHasSound">包含声音</label>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="generate-btn" onclick="generateVideo()">生成视频</button>
+                </div>
+            </div>
+
+            <!-- 预览区域 -->
+            <div class="preview-area">
+                <h2>📋 预览与下载</h2>
+                <div class="preview-content" id="previewContent">
+                    <div class="empty-state">
+                        <p>请选择左侧的生成器创建测试文件</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentBlob = null;
+        let currentFileName = '';
+
+        // 切换标签页
+        function switchTab(tabName) {
+            // 移除所有active类
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.generator-content').forEach(content => content.classList.remove('active'));
+
+            // 添加active类到当前标签
+            event.target.classList.add('active');
+            document.getElementById(tabName + 'Generator').classList.add('active');
+        }
+
+        // 更新大小控制显示
+        function updateSizeControl() {
+            const format = document.getElementById('imgFormat').value;
+            const sizeControlGroup = document.getElementById('sizeControlGroup');
+            const qualityInput = document.getElementById('imgQuality');
+
+            if (format === 'jpeg' || format === 'jpg' || format === 'webp') {
+                sizeControlGroup.style.display = 'block';
+                qualityInput.disabled = false;
+            } else {
+                sizeControlGroup.style.display = 'block';
+                qualityInput.disabled = true;
+                qualityInput.value = 100;
+            }
+        }
+
+        // 显示加载状态
+        function showLoading(buttonId, loadingText) {
+            const button = document.querySelector(`button[onclick="${buttonId}()"]`);
+            if (button) {
+                button.disabled = true;
+                button.dataset.originalText = button.innerHTML;
+                button.innerHTML = `<span class="loading"></span>${loadingText}`;
+            }
+
+            // 预览区域显示加载
+            const previewContent = document.getElementById('previewContent');
+            previewContent.innerHTML = `
+                <div class="loading-preview">
+                    <div class="spinner"></div>
+                    <p>${loadingText}</p>
+                </div>
+            `;
+        }
+
+        // 隐藏加载状态
+        function hideLoading(buttonId) {
+            const button = document.querySelector(`button[onclick="${buttonId}()"]`);
+            if (button && button.dataset.originalText) {
+                button.disabled = false;
+                button.innerHTML = button.dataset.originalText;
+                delete button.dataset.originalText;
+            }
+        }
+
+        // 生成图片
+        async function generateImage() {
+            showLoading('generateImage', '正在生成图片...');
+
+            try {
+                const width = parseInt(document.getElementById('imgWidth').value);
+                const height = parseInt(document.getElementById('imgHeight').value);
+                const quality = parseInt(document.getElementById('imgQuality').value) / 100;
+                const format = document.getElementById('imgFormat').value;
+
+                const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+
+            // 创建渐变背景
+            const gradient = ctx.createLinearGradient(0, 0, width, height);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(1, '#667eea');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // 添加文字信息
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 30px Microsoft YaHei';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`测试图片 ${width}x${height}`, width / 2, height / 2 - 20);
+            ctx.font = '20px Microsoft YaHei';
+            ctx.fillText(`格式: ${format.toUpperCase()}`, width / 2, height / 2 + 20);
+
+            // 处理SVG格式
+            if (format === 'svg') {
+                const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#667eea;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="${width}" height="${height}" fill="url(#grad)"/>
+  <text x="50%" y="45%" text-anchor="middle" fill="white" font-size="30" font-weight="bold" font-family="Arial">测试图片 ${width}x${height}</text>
+  <text x="50%" y="55%" text-anchor="middle" fill="white" font-size="20" font-family="Arial">格式: SVG</text>
+</svg>`;
+                currentBlob = new Blob([svgContent], { type: 'image/svg+xml' });
+                currentFileName = `test_image_${width}x${height}.svg`;
+            } else {
+                // 转换为Blob
+                let mimeType = `image/${format}`;
+                if (format === 'jpeg' || format === 'jpg') {
+                    mimeType = 'image/jpeg';
+                }
+
+                // 使用用户指定的质量
+                let blob = await new Promise(resolve => canvas.toBlob(resolve, mimeType, quality));
+
+                currentBlob = blob;
+                currentFileName = `test_image_${width}x${height}.${format}`;
+            }
+
+            const info = {
+                '宽度': width + ' px',
+                '高度': height + ' px',
+                '格式': format.toUpperCase(),
+                '文件大小': (currentBlob.size / 1024).toFixed(2) + ' KB'
+            };
+
+                if (format === 'jpeg' || format === 'jpg' || format === 'webp') {
+                    info['质量'] = Math.round(quality * 100) + '%';
+                }
+
+                displayPreview(currentBlob, 'image', info);
+            } catch (error) {
+                console.error('生成图片失败:', error);
+                alert('生成图片失败，请重试');
+            } finally {
+                hideLoading('generateImage');
+            }
+        }
+
+        // 生成音频
+        async function generateAudio() {
+            showLoading('generateAudio', '正在生成音频...');
+
+            try {
+                const duration = parseInt(document.getElementById('audioDuration').value);
+                const format = document.getElementById('audioFormat').value;
+                const hasSound = document.getElementById('audioHasSound').checked;
+
+            const sampleRate = 44100;
+            const numChannels = 2;
+            const numSamples = sampleRate * duration;
+
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const audioBuffer = audioContext.createBuffer(numChannels, numSamples, sampleRate);
+
+            if (hasSound) {
+                // 生成440Hz正弦波
+                const frequency = 440;
+                for (let channel = 0; channel < numChannels; channel++) {
+                    const channelData = audioBuffer.getChannelData(channel);
+                    for (let i = 0; i < numSamples; i++) {
+                        let envelope = 1;
+                        const fadeTime = sampleRate * 0.1;
+                        if (i < fadeTime) {
+                            envelope = i / fadeTime;
+                        } else if (i > numSamples - fadeTime) {
+                            envelope = (numSamples - i) / fadeTime;
+                        }
+                        channelData[i] = Math.sin(2 * Math.PI * frequency * i / sampleRate) * 0.3 * envelope;
+                    }
+                }
+            }
+
+            const wavBlob = audioBufferToWav(audioBuffer);
+            currentBlob = wavBlob;
+            currentFileName = `test_audio_${duration}s.${format === 'wav' ? 'wav' : 'mp3'}`;
+
+                displayPreview(wavBlob, 'audio', {
+                    '时长': duration + ' 秒',
+                    '格式': format.toUpperCase(),
+                    '包含声音': hasSound ? '是' : '否',
+                    '文件大小': (wavBlob.size / 1024).toFixed(2) + ' KB'
+                });
+            } catch (error) {
+                console.error('生成音频失败:', error);
+                alert('生成音频失败，请重试');
+            } finally {
+                hideLoading('generateAudio');
+            }
+        }
+
+        // 生成视频
+        async function generateVideo() {
+            showLoading('generateVideo', '正在生成视频，请稍候...');
+
+            try {
+                const duration = parseInt(document.getElementById('videoDuration').value);
+                const format = document.getElementById('videoFormat').value;
+                const resolution = document.getElementById('videoResolution').value;
+                const hasSound = document.getElementById('videoHasSound').checked;
+
+            const [width, height] = resolution.split('x').map(Number);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+
+            const stream = canvas.captureStream(30);
+
+            // 添加音频轨道
+            if (hasSound) {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const dest = audioContext.createMediaStreamDestination();
+                oscillator.connect(dest);
+                oscillator.frequency.value = 440;
+                oscillator.start();
+
+                const audioTrack = dest.stream.getAudioTracks()[0];
+                stream.addTrack(audioTrack);
+            }
+
+            const mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'video/webm',
+                videoBitsPerSecond: 2500000
+            });
+
+            const chunks = [];
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    chunks.push(e.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                currentBlob = blob;
+                currentFileName = `test_video_${resolution}_${duration}s.${format}`;
+
+                displayPreview(blob, 'video', {
+                    '时长': duration + ' 秒',
+                    '分辨率': resolution,
+                    '格式': format.toUpperCase(),
+                    '包含声音': hasSound ? '是' : '否',
+                    '文件大小': (blob.size / 1024).toFixed(2) + ' KB'
+                });
+
+                hideLoading('generateVideo');
+            };
+
+            mediaRecorder.start();
+
+            let startTime = Date.now();
+            let frame = 0;
+
+            function animate() {
+                const elapsed = (Date.now() - startTime) / 1000;
+
+                if (elapsed >= duration) {
+                    mediaRecorder.stop();
+                    return;
+                }
+
+                // 绘制动画背景
+                const gradient = ctx.createLinearGradient(0, 0, width, height);
+                const hue = (frame * 2) % 360;
+                gradient.addColorStop(0, `hsl(${hue}, 70%, 60%)`);
+                gradient.addColorStop(1, `hsl(${(hue + 60) % 360}, 70%, 60%)`);
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, width, height);
+
+                // 绘制移动的圆形
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                const x = (Math.sin(elapsed * 2) * 0.3 + 0.5) * width;
+                const y = (Math.cos(elapsed * 2) * 0.3 + 0.5) * height;
+                ctx.beginPath();
+                ctx.arc(x, y, 50, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 绘制文字
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 40px Microsoft YaHei';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('测试视频', width / 2, height / 2 - 30);
+                ctx.font = '25px Microsoft YaHei';
+                ctx.fillText(`${resolution} - ${elapsed.toFixed(1)}s`, width / 2, height / 2 + 20);
+
+                frame++;
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+            } catch (error) {
+                console.error('生成视频失败:', error);
+                alert('生成视频失败，请重试');
+                hideLoading('generateVideo');
+            }
+        }
+
+        // 显示预览
+        function displayPreview(blob, type, info) {
+            const previewContent = document.getElementById('previewContent');
+            const url = URL.createObjectURL(blob);
+
+            let mediaElement = '';
+            if (type === 'image') {
+                mediaElement = `<img src="${url}" alt="预览图片">`;
+            } else if (type === 'audio') {
+                mediaElement = `<audio controls src="${url}"></audio>`;
+            } else if (type === 'video') {
+                mediaElement = `<video controls src="${url}"></video>`;
+            }
+
+            const infoHTML = Object.entries(info).map(([key, value]) =>
+                `<p><strong>${key}:</strong> ${value}</p>`
+            ).join('');
+
+            previewContent.innerHTML = `
+                ${mediaElement}
+                <div class="file-info">
+                    <p><strong>文件名:</strong> ${currentFileName}</p>
+                    ${infoHTML}
+                </div>
+                <button class="download-btn" onclick="downloadFile()">⬇️ 下载文件</button>
+            `;
+        }
+
+        // 下载文件
+        function downloadFile() {
+            if (!currentBlob) return;
+
+            const url = URL.createObjectURL(currentBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = currentFileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // 将AudioBuffer转换为WAV格式
+        function audioBufferToWav(buffer) {
+            const numChannels = buffer.numberOfChannels;
+            const sampleRate = buffer.sampleRate;
+            const format = 1;
+            const bitDepth = 16;
+
+            const bytesPerSample = bitDepth / 8;
+            const blockAlign = numChannels * bytesPerSample;
+
+            const data = [];
+            for (let i = 0; i < buffer.length; i++) {
+                for (let channel = 0; channel < numChannels; channel++) {
+                    const sample = buffer.getChannelData(channel)[i];
+                    const int16 = Math.max(-1, Math.min(1, sample)) * 0x7FFF;
+                    data.push(int16 < 0 ? int16 + 0x10000 : int16);
+                }
+            }
+
+            const dataLength = data.length * bytesPerSample;
+            const bufferArray = new ArrayBuffer(44 + dataLength);
+            const view = new DataView(bufferArray);
+
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + dataLength, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, format, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * blockAlign, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, bitDepth, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, dataLength, true);
+
+            let offset = 44;
+            for (let i = 0; i < data.length; i++) {
+                view.setInt16(offset, data[i], true);
+                offset += 2;
+            }
+
+            return new Blob([bufferArray], { type: 'audio/wav' });
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+    </script>
+</body>
+</html>

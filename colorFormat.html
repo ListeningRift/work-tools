@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>颜色转换器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: #667eea;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .color-preview {
+            width: 100%;
+            height: 150px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            border: 3px solid #e0e0e0;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-group input.error {
+            border-color: #ff4757;
+            background-color: #fff5f5;
+        }
+
+        .input-group input.success {
+            border-color: #2ed573;
+            background-color: #f0fff4;
+        }
+
+        .error-message {
+            color: #ff4757;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .input-group input.error + .error-message {
+            display: block;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #999;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>颜色转换器</h1>
+
+        <div class="color-preview" id="colorPreview"></div>
+
+        <div class="input-group">
+            <label for="hexInput">HEX 格式</label>
+            <input type="text" id="hexInput" placeholder="#RRGGBB 或 #RGB">
+            <div class="error-message">请输入有效的 HEX 格式（如 #FF5733 或 #F53）</div>
+        </div>
+
+        <div class="input-group">
+            <label for="rgbInput">RGB 格式</label>
+            <input type="text" id="rgbInput" placeholder="rgb(255, 87, 51)">
+            <div class="error-message">请输入有效的 RGB 格式（如 rgb(255, 87, 51)）</div>
+        </div>
+
+        <div class="input-group">
+            <label for="rgbaInput">RGBA 格式</label>
+            <input type="text" id="rgbaInput" placeholder="rgba(255, 87, 51, 1)">
+            <div class="error-message">请输入有效的 RGBA 格式（如 rgba(255, 87, 51, 1)）</div>
+        </div>
+
+        <div class="input-group">
+            <label for="hslInput">HSL 格式</label>
+            <input type="text" id="hslInput" placeholder="hsl(9, 100%, 60%)">
+            <div class="error-message">请输入有效的 HSL 格式（如 hsl(9, 100%, 60%)）</div>
+        </div>
+
+        <div class="input-group">
+            <label for="hslaInput">HSLA 格式</label>
+            <input type="text" id="hslaInput" placeholder="hsla(9, 100%, 60%, 1)">
+            <div class="error-message">请输入有效的 HSLA 格式（如 hsla(9, 100%, 60%, 1)）</div>
+        </div>
+
+        <div class="footer">
+            输入任意格式的颜色，其他格式将自动转换
+        </div>
+    </div>
+
+    <script>
+        const inputs = {
+            hex: document.getElementById('hexInput'),
+            rgb: document.getElementById('rgbInput'),
+            rgba: document.getElementById('rgbaInput'),
+            hsl: document.getElementById('hslInput'),
+            hsla: document.getElementById('hslaInput')
+        };
+        const colorPreview = document.getElementById('colorPreview');
+
+        let isUpdating = false;
+
+        // 验证和解析 HEX 格式
+        function parseHex(hex) {
+            hex = hex.trim().replace(/^#/, '');
+            if (hex.length === 3) {
+                hex = hex.split('').map(c => c + c).join('');
+            }
+            if (!/^[0-9A-Fa-f]{6}$/.test(hex)) {
+                return null;
+            }
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            return { r, g, b, a: 1 };
+        }
+
+        // 验证和解析 RGB/RGBA 格式
+        function parseRgb(rgb) {
+            const match = rgb.match(/rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)/);
+            if (!match) return null;
+            const r = parseInt(match[1]);
+            const g = parseInt(match[2]);
+            const b = parseInt(match[3]);
+            const a = match[4] !== undefined ? parseFloat(match[4]) : 1;
+            if (r > 255 || g > 255 || b > 255 || a > 1 || a < 0) return null;
+            return { r, g, b, a };
+        }
+
+        // 验证和解析 HSL/HSLA 格式
+        function parseHsl(hsl) {
+            const match = hsl.match(/hsla?\s*\(\s*([\d.]+)\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%\s*(?:,\s*([\d.]+)\s*)?\)/);
+            if (!match) return null;
+            const h = parseFloat(match[1]);
+            const s = parseFloat(match[2]);
+            const l = parseFloat(match[3]);
+            const a = match[4] !== undefined ? parseFloat(match[4]) : 1;
+            if (h > 360 || s > 100 || l > 100 || a > 1 || a < 0) return null;
+            return hslToRgb(h, s, l, a);
+        }
+
+        // HSL 转 RGB
+        function hslToRgb(h, s, l, a = 1) {
+            h = h / 360;
+            s = s / 100;
+            l = l / 100;
+            let r, g, b;
+
+            if (s === 0) {
+                r = g = b = l;
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1/6) return p + (q - p) * 6 * t;
+                    if (t < 1/2) return q;
+                    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                };
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+
+            return {
+                r: Math.round(r * 255),
+                g: Math.round(g * 255),
+                b: Math.round(b * 255),
+                a
+            };
+        }
+
+        // RGB 转 HSL
+        function rgbToHsl(r, g, b) {
+            r /= 255;
+            g /= 255;
+            b /= 255;
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0;
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                    case g: h = ((b - r) / d + 2) / 6; break;
+                    case b: h = ((r - g) / d + 4) / 6; break;
+                }
+            }
+
+            return {
+                h: Math.round(h * 360),
+                s: Math.round(s * 100),
+                l: Math.round(l * 100)
+            };
+        }
+
+        // 转换为所有格式
+        function convertToAllFormats(rgba) {
+            const { r, g, b, a } = rgba;
+            const hsl = rgbToHsl(r, g, b);
+
+            return {
+                hex: `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase(),
+                rgb: `rgb(${r}, ${g}, ${b})`,
+                rgba: `rgba(${r}, ${g}, ${b}, ${a})`,
+                hsl: `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`,
+                hsla: `hsla(${hsl.h}, ${hsl.s}%, ${hsl.l}%, ${a})`
+            };
+        }
+
+        // 更新所有输入框
+        function updateAllInputs(sourceType, rgba) {
+            if (isUpdating) return;
+            isUpdating = true;
+
+            const formats = convertToAllFormats(rgba);
+
+            Object.keys(inputs).forEach(type => {
+                if (type !== sourceType) {
+                    inputs[type].value = formats[type];
+                    inputs[type].classList.remove('error');
+                    inputs[type].classList.add('success');
+                }
+            });
+
+            // 更新颜色预览
+            colorPreview.style.backgroundColor = formats.rgba;
+
+            setTimeout(() => {
+                Object.keys(inputs).forEach(type => {
+                    inputs[type].classList.remove('success');
+                });
+            }, 500);
+
+            isUpdating = false;
+        }
+
+        // 处理输入
+        function handleInput(type, value) {
+            if (isUpdating || !value.trim()) return;
+
+            let rgba = null;
+
+            switch (type) {
+                case 'hex':
+                    rgba = parseHex(value);
+                    break;
+                case 'rgb':
+                case 'rgba':
+                    rgba = parseRgb(value);
+                    break;
+                case 'hsl':
+                case 'hsla':
+                    rgba = parseHsl(value);
+                    break;
+            }
+
+            if (rgba) {
+                inputs[type].classList.remove('error');
+                updateAllInputs(type, rgba);
+            } else {
+                inputs[type].classList.add('error');
+            }
+        }
+
+        // 绑定事件
+        Object.keys(inputs).forEach(type => {
+            inputs[type].addEventListener('input', (e) => {
+                handleInput(type, e.target.value);
+            });
+
+            inputs[type].addEventListener('blur', (e) => {
+                if (!e.target.value.trim()) {
+                    e.target.classList.remove('error', 'success');
+                }
+            });
+        });
+
+        // 初始化默认颜色
+        inputs.hex.value = '#667eea';
+        handleInput('hex', '#667eea');
+    </script>
+</body>
+</html>

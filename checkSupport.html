@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML5 高级特性支持检测工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: #667eea;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .summary {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .summary h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .category {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .category h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        .feature:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .feature-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .supported {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+
+        .supported .feature-icon {
+            background: #28a745;
+            color: white;
+        }
+
+        .not-supported {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+
+        .not-supported .feature-icon {
+            background: #dc3545;
+            color: white;
+        }
+
+        .feature-name {
+            font-weight: 600;
+            color: #333;
+            flex: 1;
+        }
+
+        .feature-detail {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .browser-info {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .browser-info h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            color: #333;
+            word-break: break-all;
+        }
+
+        .export-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>&#x1F50D; HTML5 高级特性支持检测</h1>
+
+        <div class="summary">
+            <h2>检测概览</h2>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalFeatures">0</div>
+                    <div class="stat-label">总特性数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="supportedFeatures">0</div>
+                    <div class="stat-label">支持的特性</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="supportRate">0%</div>
+                    <div class="stat-label">支持率</div>
+                </div>
+            </div>
+            <button class="export-btn" onclick="exportReport()">&#x1F4E5; 导出检测报告</button>
+        </div>
+
+        <div class="browser-info">
+            <h2>浏览器信息</h2>
+            <div class="info-grid" id="browserInfo"></div>
+        </div>
+
+        <div id="features"></div>
+    </div>
+
+    <script>
+        const features = {
+            '存储技术': [
+                { name: 'localStorage', check: () => typeof(Storage) !== 'undefined' && 'localStorage' in window },
+                { name: 'sessionStorage', check: () => typeof(Storage) !== 'undefined' && 'sessionStorage' in window },
+                { name: 'IndexedDB', check: () => 'indexedDB' in window },
+                { name: 'Web SQL', check: () => 'openDatabase' in window },
+                { name: 'Cache API', check: () => 'caches' in window },
+                { name: 'Cookie Store API', check: () => 'cookieStore' in window }
+            ],
+            '图形与多媒体': [
+                { name: 'Canvas', check: () => {
+                    const canvas = document.createElement('canvas');
+                    return !!(canvas.getContext && canvas.getContext('2d'));
+                }},
+                { name: 'WebGL', check: () => {
+                    const canvas = document.createElement('canvas');
+                    return !!(canvas.getContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+                }},
+                { name: 'WebGL2', check: () => {
+                    const canvas = document.createElement('canvas');
+                    return !!(canvas.getContext && canvas.getContext('webgl2'));
+                }},
+                { name: 'SVG', check: () => !!document.createElementNS && !!document.createElementNS('http://www.w3.org/2000/svg', 'svg').createSVGRect },
+                { name: 'Video', check: () => !!document.createElement('video').canPlayType },
+                { name: 'Audio', check: () => !!document.createElement('audio').canPlayType },
+                { name: 'WebRTC', check: () => 'RTCPeerConnection' in window || 'webkitRTCPeerConnection' in window },
+                { name: 'Media Recorder', check: () => 'MediaRecorder' in window },
+                { name: 'Web Audio API', check: () => 'AudioContext' in window || 'webkitAudioContext' in window }
+            ],
+            '通信技术': [
+                { name: 'WebSocket', check: () => 'WebSocket' in window },
+                { name: 'Server-Sent Events', check: () => 'EventSource' in window },
+                { name: 'Fetch API', check: () => 'fetch' in window },
+                { name: 'XMLHttpRequest Level 2', check: () => 'XMLHttpRequest' in window && 'upload' in new XMLHttpRequest() },
+                { name: 'WebRTC Data Channel', check: () => 'RTCDataChannel' in window || 'webkitRTCDataChannel' in window },
+                { name: 'Broadcast Channel', check: () => 'BroadcastChannel' in window }
+            ],
+            '性能与优化': [
+                { name: 'Web Workers', check: () => 'Worker' in window },
+                { name: 'Service Workers', check: () => 'serviceWorker' in navigator },
+                { name: 'Shared Workers', check: () => 'SharedWorker' in window },
+                { name: 'Performance API', check: () => 'performance' in window },
+                { name: 'Navigation Timing', check: () => 'performance' in window && 'timing' in performance },
+                { name: 'Resource Timing', check: () => 'performance' in window && 'getEntriesByType' in performance },
+                { name: 'User Timing', check: () => 'performance' in window && 'mark' in performance },
+                { name: 'requestAnimationFrame', check: () => 'requestAnimationFrame' in window },
+                { name: 'requestIdleCallback', check: () => 'requestIdleCallback' in window }
+            ],
+            '设备访问': [
+                { name: 'Geolocation', check: () => 'geolocation' in navigator },
+                { name: 'Device Orientation', check: () => 'DeviceOrientationEvent' in window },
+                { name: 'Device Motion', check: () => 'DeviceMotionEvent' in window },
+                { name: 'Vibration API', check: () => 'vibrate' in navigator },
+                { name: 'Battery Status', check: () => 'getBattery' in navigator },
+                { name: 'Media Devices', check: () => 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices },
+                { name: 'Ambient Light', check: () => 'AmbientLightSensor' in window },
+                { name: 'Proximity Sensor', check: () => 'ProximitySensor' in window }
+            ],
+            '离线与存储': [
+                { name: 'Application Cache', check: () => 'applicationCache' in window },
+                { name: 'Service Worker', check: () => 'serviceWorker' in navigator },
+                { name: 'Background Sync', check: () => 'sync' in (navigator.serviceWorker?.register?.() || {}) },
+                { name: 'Persistent Storage', check: () => 'storage' in navigator && 'persist' in navigator.storage },
+                { name: 'File System Access', check: () => 'showOpenFilePicker' in window }
+            ],
+            '安全与认证': [
+                { name: 'Web Crypto API', check: () => 'crypto' in window && 'subtle' in crypto },
+                { name: 'Credential Management', check: () => 'credentials' in navigator },
+                { name: 'Web Authentication', check: () => 'credentials' in navigator && 'create' in navigator.credentials },
+                { name: 'Payment Request', check: () => 'PaymentRequest' in window },
+                { name: 'Content Security Policy', check: () => 'SecurityPolicyViolationEvent' in window }
+            ],
+            '现代Web API': [
+                { name: 'Intersection Observer', check: () => 'IntersectionObserver' in window },
+                { name: 'Mutation Observer', check: () => 'MutationObserver' in window },
+                { name: 'Resize Observer', check: () => 'ResizeObserver' in window },
+                { name: 'Performance Observer', check: () => 'PerformanceObserver' in window },
+                { name: 'Web Animations', check: () => 'animate' in document.createElement('div') },
+                { name: 'Pointer Events', check: () => 'PointerEvent' in window },
+                { name: 'Touch Events', check: () => 'ontouchstart' in window },
+                { name: 'Fullscreen API', check: () => 'requestFullscreen' in document.documentElement || 'webkitRequestFullscreen' in document.documentElement },
+                { name: 'Screen Orientation', check: () => 'orientation' in screen || 'mozOrientation' in screen },
+                { name: 'Page Visibility', check: () => 'hidden' in document || 'webkitHidden' in document },
+                { name: 'Clipboard API', check: () => 'clipboard' in navigator },
+                { name: 'Share API', check: () => 'share' in navigator },
+                { name: 'Notifications', check: () => 'Notification' in window },
+                { name: 'Push API', check: () => 'PushManager' in window }
+            ],
+            '表单与输入': [
+                { name: 'Input Type: email', check: () => {
+                    const input = document.createElement('input');
+                    input.setAttribute('type', 'email');
+                    return input.type === 'email';
+                }},
+                { name: 'Input Type: date', check: () => {
+                    const input = document.createElement('input');
+                    input.setAttribute('type', 'date');
+                    return input.type === 'date';
+                }},
+                { name: 'Input Type: color', check: () => {
+                    const input = document.createElement('input');
+                    input.setAttribute('type', 'color');
+                    return input.type === 'color';
+                }},
+                { name: 'Input Type: range', check: () => {
+                    const input = document.createElement('input');
+                    input.setAttribute('type', 'range');
+                    return input.type === 'range';
+                }},
+                { name: 'Form Validation', check: () => 'checkValidity' in document.createElement('input') },
+                { name: 'Datalist', check: () => 'options' in document.createElement('datalist') }
+            ],
+            '高级CSS特性': [
+                { name: 'CSS Grid', check: () => CSS.supports('display', 'grid') },
+                { name: 'CSS Flexbox', check: () => CSS.supports('display', 'flex') },
+                { name: 'CSS Variables', check: () => CSS.supports('--test', '0') },
+                { name: 'CSS Animations', check: () => CSS.supports('animation', 'test 1s') },
+                { name: 'CSS Transforms', check: () => CSS.supports('transform', 'rotate(1deg)') },
+                { name: 'CSS Filters', check: () => CSS.supports('filter', 'blur(1px)') },
+                { name: 'CSS Backdrop Filter', check: () => CSS.supports('backdrop-filter', 'blur(1px)') }
+            ],
+            '其他高级特性': [
+                { name: 'WebAssembly', check: () => 'WebAssembly' in window },
+                { name: 'Drag and Drop', check: () => 'draggable' in document.createElement('div') },
+                { name: 'History API', check: () => 'pushState' in history },
+                { name: 'Custom Elements', check: () => 'customElements' in window },
+                { name: 'Shadow DOM', check: () => 'attachShadow' in document.createElement('div') },
+                { name: 'HTML Templates', check: () => 'content' in document.createElement('template') },
+                { name: 'ES6 Modules', check: () => 'noModule' in document.createElement('script') },
+                { name: 'Import Maps', check: () => HTMLScriptElement.supports && HTMLScriptElement.supports('importmap') },
+                { name: 'Async/Await', check: () => {
+                    try {
+                        eval('(async () => {})');
+                        return true;
+                    } catch (e) {
+                        return false;
+                    }
+                }},
+                { name: 'BigInt', check: () => typeof BigInt !== 'undefined' },
+                { name: 'Proxy', check: () => typeof Proxy !== 'undefined' },
+                { name: 'Reflect', check: () => typeof Reflect !== 'undefined' }
+            ]
+        };
+
+        function detectBrowser() {
+            const ua = navigator.userAgent;
+            const uaLower = ua.toLowerCase();
+            let browserName = '其他浏览器';
+            let browserVersion = '未知版本';
+            let browserEngine = '未知引擎';
+
+            // 检测浏览器引擎
+            if (uaLower.indexOf('webkit') > -1) {
+                browserEngine = 'WebKit';
+            }
+            if (uaLower.indexOf('gecko') > -1 && uaLower.indexOf('like gecko') === -1) {
+                browserEngine = 'Gecko';
+            }
+            if (uaLower.indexOf('trident') > -1 || uaLower.indexOf('msie') > -1) {
+                browserEngine = 'Trident';
+            }
+            if (uaLower.indexOf('presto') > -1) {
+                browserEngine = 'Presto';
+            }
+            if (uaLower.indexOf('edg') > -1) {
+                browserEngine = 'EdgeHTML/Chromium';
+            }
+
+            // 检测具体浏览器（顺序很重要，从最特殊到最通用）
+            if (uaLower.indexOf('micromessenger') > -1) {
+                browserName = '微信';
+                const version = ua.match(/micromessenger\/([\d.]+)/i);
+                if (version) browserVersion = version[1];
+            } else if (uaLower.indexOf('qqbrowser') > -1) {
+                browserName = 'QQ浏览器';
+                const version = ua.match(/qqbrowser\/([\d.]+)/i);
+                if (version) browserVersion = version[1];
+            } else if (uaLower.indexOf('qihu 360') > -1 || uaLower.indexOf('360se') > -1 || uaLower.indexOf('360ee') > -1) {
+                browserName = '360浏览器';
+                const version = ua.match(/360[se]e\/([\d.]+)/i);
+                if (version) browserVersion = version[1];
+                else browserVersion = '检测版本';
+            } else if (uaLower.indexOf('metasr') > -1 || uaLower.indexOf('sogou') > -1) {
+                browserName = '搜狗浏览器';
+                const version = ua.match(/se ([\d.x]+)/i);
+                if (version) browserVersion = version[1];
+            } else if (uaLower.indexOf('ucbrowser') > -1 || uaLower.indexOf('ubrowser') > -1) {
+                browserName = 'UC浏览器';
+                const version = ua.match(/u?c?browser\/([\d.]+)/i);
+                if (version) browserVersion = version[1];
+            } else if (uaLower.indexOf('bidubrowser') > -1 || uaLower.indexOf('baidubrowser') > -1) {
+                browserName = '百度浏览器';
+                const version = ua.match(/ba?idubrowser[\/ ]([\d.]+)/i);
+                if (version) browserVersion = version[1];
+            } else if (uaLower.indexOf('edg/') > -1) {
+                browserName = 'Microsoft Edge (Chromium)';
+                const version = ua.match(/edg\/([\d.]+)/i);
+                if (version) browserVersion = version[1];
+                browserEngine = 'Chromium';
+            } else if (uaLower.indexOf('edge/') > -1) {
+                browserName = 'Microsoft Edge (Legacy)';
+                const version = ua.match(/edge\/([\d.]+)/i);
+                if (version) browserVersion = version[1];
+                browserEngine = 'EdgeHTML';
+            } else if (uaLower.indexOf('opr/') > -1 || uaLower.indexOf('opera') > -1) {
+                browserName = 'Opera';
+                let version = ua.match(/opr\/([\d.]+)/i);
+                if (!version) version = ua.match(/opera\/([\d.]+)/i);
+                if (version) browserVersion = version[1];
+                browserEngine = 'Chromium';
+            } else if (uaLower.indexOf('vivaldi') > -1) {
+                browserName = 'Vivaldi';
+                const version = ua.match(/vivaldi\/([\d.]+)/i);
+                if (version) browserVersion = version[1];
+                browserEngine = 'Chromium';
+            } else if (uaLower.indexOf('brave') > -1) {
+                browserName = 'Brave';
+                const version = ua.match(/brave\/([\d.]+)/i);
+                if (version) browserVersion = version[1];
+                browserEngine = 'Chromium';
+            } else if (uaLower.indexOf('chrome') > -1 && uaLower.indexOf('chromium') === -1) {
+                browserName = 'Google Chrome';
+                const version = ua.match(/chrome\/([\d.]+)/i);
+                if (version) browserVersion = version[1];
+                browserEngine = 'Chromium';
+            } else if (uaLower.indexOf('chromium') > -1) {
+                browserName = 'Chromium';
+                const version = ua.match(/chromium\/([\d.]+)/i);
+                if (version) browserVersion = version[1];
+                browserEngine = 'Chromium';
+            } else if (uaLower.indexOf('safari') > -1 && uaLower.indexOf('chrome') === -1) {
+                browserName = 'Safari';
+                const version = ua.match(/version\/([\d.]+)/i);
+                if (version) browserVersion = version[1];
+                browserEngine = 'WebKit';
+            } else if (uaLower.indexOf('firefox') > -1) {
+                browserName = 'Mozilla Firefox';
+                const version = ua.match(/firefox\/([\d.]+)/i);
+                if (version) browserVersion = version[1];
+                browserEngine = 'Gecko';
+            } else if (uaLower.indexOf('msie') > -1 || uaLower.indexOf('trident') > -1) {
+                browserName = 'Internet Explorer';
+                let version = ua.match(/msie ([\d.]+)/i);
+                if (!version) version = ua.match(/rv:([\d.]+)/i);
+                if (version) browserVersion = version[1];
+                browserEngine = 'Trident';
+            }
+
+            return {
+                name: browserName,
+                version: browserVersion,
+                engine: browserEngine
+            };
+        }
+
+        function getOSInfo() {
+            const ua = navigator.userAgent;
+            const uaLower = ua.toLowerCase();
+            let osName = '其他系统';
+            let osVersion = '';
+
+            if (uaLower.indexOf('windows nt 10.0') > -1) {
+                osName = 'Windows 10/11';
+            } else if (uaLower.indexOf('windows nt 6.3') > -1) {
+                osName = 'Windows 8.1';
+            } else if (uaLower.indexOf('windows nt 6.2') > -1) {
+                osName = 'Windows 8';
+            } else if (uaLower.indexOf('windows nt 6.1') > -1) {
+                osName = 'Windows 7';
+            } else if (uaLower.indexOf('windows nt 6.0') > -1) {
+                osName = 'Windows Vista';
+            } else if (uaLower.indexOf('windows nt 5.1') > -1) {
+                osName = 'Windows XP';
+            } else if (uaLower.indexOf('windows') > -1) {
+                osName = 'Windows';
+            } else if (uaLower.indexOf('mac os x') > -1) {
+                osName = 'macOS';
+                const version = ua.match(/mac os x ([\d_]+)/i);
+                if (version) osVersion = ' ' + version[1].replace(/_/g, '.');
+            } else if (uaLower.indexOf('openharmony') > -1) {
+                osName = 'OpenHarmony';
+                const version = ua.match(/openharmony[\/\s]([\d.]+)/i);
+                if (version) osVersion = ' ' + version[1];
+            } else if (uaLower.indexOf('android') > -1) {
+                osName = 'Android';
+                const version = ua.match(/android ([\d.]+)/i);
+                if (version) osVersion = ' ' + version[1];
+            } else if (uaLower.indexOf('iphone') > -1 || uaLower.indexOf('ipad') > -1) {
+                osName = 'iOS';
+                const version = ua.match(/os ([\d_]+)/i);
+                if (version) osVersion = ' ' + version[1].replace(/_/g, '.');
+            } else if (uaLower.indexOf('linux') > -1) {
+                osName = 'Linux';
+            }
+
+            return osName + osVersion;
+        }
+
+        function getBrowserInfo() {
+            const browser = detectBrowser();
+            const ua = navigator.userAgent;
+
+            const info = {
+                '浏览器名称': browser.name,
+                '浏览器版本': browser.version,
+                '浏览器引擎': browser.engine,
+                '操作系统': getOSInfo(),
+                '用户代理(UA)': ua,
+                '平台架构': navigator.platform,
+                '语言': navigator.language,
+                '在线状态': navigator.onLine ? '在线' : '离线',
+                'Cookie启用': navigator.cookieEnabled ? '是' : '否',
+                '屏幕分辨率': screen.width + ' \u00D7 ' + screen.height,
+                '可用分辨率': screen.availWidth + ' \u00D7 ' + screen.availHeight,
+                '颜色深度': screen.colorDepth + ' 位',
+                '设备像素比': window.devicePixelRatio || 1,
+                '时区': Intl.DateTimeFormat().resolvedOptions().timeZone,
+                'CPU核心数': navigator.hardwareConcurrency || '未知',
+                '最大触摸点': navigator.maxTouchPoints || 0
+            };
+
+            if (navigator.connection) {
+                info['网络类型'] = navigator.connection.effectiveType || '未知';
+                info['下行速度'] = navigator.connection.downlink ? (navigator.connection.downlink + ' Mbps') : '未知';
+            }
+
+            return info;
+        }
+
+        function displayBrowserInfo() {
+            const info = getBrowserInfo();
+            const container = document.getElementById('browserInfo');
+
+            for (const key in info) {
+                if (info.hasOwnProperty(key)) {
+                    const item = document.createElement('div');
+                    item.className = 'info-item';
+                    item.innerHTML = '<div class="info-label">' + key + '</div><div class="info-value">' + info[key] + '</div>';
+                    container.appendChild(item);
+                }
+            }
+        }
+
+        function checkFeatures() {
+            const container = document.getElementById('features');
+            let totalCount = 0;
+            let supportedCount = 0;
+
+            for (const category in features) {
+                if (features.hasOwnProperty(category)) {
+                    const featureList = features[category];
+                    const categoryDiv = document.createElement('div');
+                    categoryDiv.className = 'category';
+
+                    const title = document.createElement('h2');
+                    title.textContent = category;
+                    categoryDiv.appendChild(title);
+
+                    const grid = document.createElement('div');
+                    grid.className = 'feature-grid';
+
+                    for (let i = 0; i < featureList.length; i++) {
+                        const feature = featureList[i];
+                        totalCount++;
+                        const isSupported = feature.check();
+                        if (isSupported) supportedCount++;
+
+                        const featureDiv = document.createElement('div');
+                        featureDiv.className = 'feature ' + (isSupported ? 'supported' : 'not-supported');
+
+                        featureDiv.innerHTML = '<div class="feature-icon">' + (isSupported ? '\u2713' : '\u2717') + '</div><div class="feature-name">' + feature.name + '</div>';
+
+                        grid.appendChild(featureDiv);
+                    }
+
+                    categoryDiv.appendChild(grid);
+                    container.appendChild(categoryDiv);
+                }
+            }
+
+            document.getElementById('totalFeatures').textContent = totalCount;
+            document.getElementById('supportedFeatures').textContent = supportedCount;
+            document.getElementById('supportRate').textContent = Math.round((supportedCount / totalCount) * 100) + '%';
+        }
+
+        function exportReport() {
+            const report = {
+                '检测时间': new Date().toLocaleString('zh-CN'),
+                '浏览器信息': getBrowserInfo(),
+                '特性检测': {}
+            };
+
+            for (const category in features) {
+                if (features.hasOwnProperty(category)) {
+                    const featureList = features[category];
+                    report['特性检测'][category] = {};
+                    for (let i = 0; i < featureList.length; i++) {
+                        const feature = featureList[i];
+                        report['特性检测'][category][feature.name] = feature.check() ? '支持' : '不支持';
+                    }
+                }
+            }
+
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json; charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'HTML5特性检测报告_' + new Date().getTime() + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        window.addEventListener('DOMContentLoaded', function() {
+            displayBrowserInfo();
+            checkFeatures();
+        });
+    </script>
+</body>
+</html>
