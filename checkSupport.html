@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HTML5 高级特性支持检测工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -236,6 +237,7 @@
                 </div>
             </div>
             <button class="export-btn" onclick="exportReport()">&#x1F4E5; 导出检测报告</button>
+            <button class="export-btn" onclick="exportImage()">&#x1F4F7; 生成报告图片</button>
         </div>
 
         <div class="browser-info">
@@ -633,30 +635,82 @@
         }
 
         function exportReport() {
-            const report = {
-                '检测时间': new Date().toLocaleString('zh-CN'),
-                '浏览器信息': getBrowserInfo(),
-                '特性检测': {}
-            };
+            try {
+                const report = {
+                    '检测时间': new Date().toLocaleString('zh-CN'),
+                    '浏览器信息': getBrowserInfo(),
+                    '特性检测': {}
+                };
 
-            for (const category in features) {
-                if (features.hasOwnProperty(category)) {
-                    const featureList = features[category];
-                    report['特性检测'][category] = {};
-                    for (let i = 0; i < featureList.length; i++) {
-                        const feature = featureList[i];
-                        report['特性检测'][category][feature.name] = feature.check() ? '支持' : '不支持';
+                for (const category in features) {
+                    if (features.hasOwnProperty(category)) {
+                        const featureList = features[category];
+                        report['特性检测'][category] = {};
+                        for (let i = 0; i < featureList.length; i++) {
+                            const feature = featureList[i];
+                            report['特性检测'][category][feature.name] = feature.check() ? '支持' : '不支持';
+                        }
                     }
                 }
+
+                const jsonStr = JSON.stringify(report, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'HTML5特性检测报告_' + new Date().getTime() + '.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(function() {
+                    URL.revokeObjectURL(url);
+                }, 100);
+            } catch (e) {
+                alert('导出失败：' + e.message);
+                console.error('导出错误：', e);
+            }
+        }
+
+        function exportImage() {
+            if (typeof html2canvas === 'undefined') {
+                alert('html2canvas 库加载失败，请检查网络连接');
+                return;
             }
 
-            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json; charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'HTML5特性检测报告_' + new Date().getTime() + '.json';
-            a.click();
-            URL.revokeObjectURL(url);
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '生成中...';
+
+            html2canvas(document.body, {
+                backgroundColor: '#667eea',
+                scale: 2,
+                logging: false,
+                useCORS: true
+            }).then(function(canvas) {
+                try {
+                    canvas.toBlob(function(blob) {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'HTML5特性检测报告_' + new Date().getTime() + '.png';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(function() {
+                            URL.revokeObjectURL(url);
+                        }, 100);
+                    }, 'image/png');
+                } catch (e) {
+                    alert('图片保存失败：' + e.message);
+                    console.error('图片保存错误：', e);
+                }
+            }).catch(function(e) {
+                alert('图片生成失败：' + e.message);
+                console.error('生成错误：', e);
+            }).finally(function() {
+                btn.disabled = false;
+                btn.textContent = '📷 生成报告图片';
+            });
         }
 
         window.addEventListener('DOMContentLoaded', function() {
