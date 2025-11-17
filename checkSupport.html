@@ -238,6 +238,7 @@
             </div>
             <button class="export-btn" onclick="exportReport()">&#x1F4E5; 导出检测报告</button>
             <button class="export-btn" onclick="exportImage()">&#x1F4F7; 生成报告图片</button>
+            <button class="export-btn" onclick="copyReportToClipboard()">&#x1F4CB; 复制报告到剪贴板</button>
         </div>
 
         <div class="browser-info">
@@ -711,6 +712,61 @@
                 btn.disabled = false;
                 btn.textContent = '📷 生成报告图片';
             });
+        }
+
+        function copyReportToClipboard() {
+            try {
+                const report = {
+                    '检测时间': new Date().toLocaleString('zh-CN'),
+                    '浏览器信息': getBrowserInfo(),
+                    '特性检测': {}
+                };
+
+                for (const category in features) {
+                    if (features.hasOwnProperty(category)) {
+                        const featureList = features[category];
+                        report['特性检测'][category] = {};
+                        for (let i = 0; i < featureList.length; i++) {
+                            const feature = featureList[i];
+                            report['特性检测'][category][feature.name] = feature.check() ? '支持' : '不支持';
+                        }
+                    }
+                }
+
+                const jsonStr = JSON.stringify(report, null, 2);
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(jsonStr).then(function() {
+                        alert('报告已复制到剪贴板！');
+                    }).catch(function(err) {
+                        fallbackCopyToClipboard(jsonStr);
+                    });
+                } else {
+                    fallbackCopyToClipboard(jsonStr);
+                }
+            } catch (e) {
+                alert('复制失败：' + e.message);
+                console.error('复制错误：', e);
+            }
+        }
+
+        function fallbackCopyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.top = '0';
+            textarea.style.left = '0';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                alert('复制失败：' + err.message);
+                console.error('复制错误：', err);
+            }
+            document.body.removeChild(textarea);
         }
 
         window.addEventListener('DOMContentLoaded', function() {
