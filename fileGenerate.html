@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>测试文件生成工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/docx@7.8.2/build/index.js"></script>
     <style>
         * {
             margin: 0;
@@ -404,6 +406,7 @@
                     <button class="tab-btn active" onclick="switchTab('image')">📷 图片</button>
                     <button class="tab-btn" onclick="switchTab('audio')">🎵 音频</button>
                     <button class="tab-btn" onclick="switchTab('video')">🎬 视频</button>
+                    <button class="tab-btn" onclick="switchTab('document')">📄 文档</button>
                 </div>
 
                 <!-- 图片生成器 -->
@@ -498,6 +501,40 @@
                         </div>
                     </div>
                     <button class="generate-btn" onclick="generateVideo()">生成视频</button>
+                </div>
+
+                <!-- 文档生成器 -->
+                <div class="card generator-content" id="documentGenerator">
+                    <h2>📄 文档生成器</h2>
+                    <div class="form-content">
+                        <div class="form-group">
+                            <label>文档类型:</label>
+                            <select id="docType" onchange="updateDocOptions()">
+                                <option value="txt">TXT 文本文件</option>
+                                <option value="xlsx">Excel 表格 (.xlsx)</option>
+                                <option value="docx">Word 文档 (.docx)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="txtOptions">
+                            <label>文本行数:</label>
+                            <input type="number" id="txtLines" value="50" min="1" max="10000">
+                        </div>
+                        <div class="form-group" id="xlsxOptions" style="display:none;">
+                            <label>行数:</label>
+                            <input type="number" id="xlsxRows" value="100" min="1" max="10000">
+                            <label style="margin-top: 10px;">列数:</label>
+                            <input type="number" id="xlsxCols" value="10" min="1" max="100">
+                        </div>
+                        <div class="form-group" id="docxOptions" style="display:none;">
+                            <label>段落数:</label>
+                            <input type="number" id="docxParas" value="10" min="1" max="1000">
+                        </div>
+                        <div class="form-group">
+                            <label>自定义文件名 (可选):</label>
+                            <input type="text" id="customFileName" placeholder="留空使用默认名称">
+                        </div>
+                    </div>
+                    <button class="generate-btn" onclick="generateDocument()">生成文档</button>
                 </div>
             </div>
 
@@ -907,6 +944,210 @@
         function writeString(view, offset, string) {
             for (let i = 0; i < string.length; i++) {
                 view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        // 更新文档选项显示
+        function updateDocOptions() {
+            const docType = document.getElementById('docType').value;
+            document.getElementById('txtOptions').style.display = docType === 'txt' ? 'block' : 'none';
+            document.getElementById('xlsxOptions').style.display = docType === 'xlsx' ? 'block' : 'none';
+            document.getElementById('docxOptions').style.display = docType === 'docx' ? 'block' : 'none';
+        }
+
+        // 生成文档
+        async function generateDocument() {
+            const docType = document.getElementById('docType').value;
+
+            if (docType === 'txt') {
+                generateTxt();
+            } else if (docType === 'xlsx') {
+                generateXlsx();
+            } else if (docType === 'docx') {
+                generateDocx();
+            }
+        }
+
+        // 生成 TXT 文件
+        function generateTxt() {
+            showLoading('generateDocument', '正在生成 TXT 文件...');
+
+            try {
+                const lines = parseInt(document.getElementById('txtLines').value);
+                const customName = document.getElementById('customFileName').value.trim();
+
+                let content = '测试文本文件\n';
+                content += '=' .repeat(50) + '\n\n';
+                content += `生成时间: ${new Date().toLocaleString()}\n`;
+                content += `总行数: ${lines}\n\n`;
+                content += '=' .repeat(50) + '\n\n';
+
+                for (let i = 1; i <= lines; i++) {
+                    content += `第 ${i} 行: 这是测试文本内容，用于测试文件生成功能。Lorem ipsum dolor sit amet.\n`;
+                }
+
+                currentBlob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                currentFileName = customName || `test_document_${lines}lines.txt`;
+
+                displayPreview(currentBlob, 'document', {
+                    '文件类型': 'TXT 文本',
+                    '行数': lines,
+                    '文件大小': (currentBlob.size / 1024).toFixed(2) + ' KB'
+                });
+            } catch (error) {
+                console.error('生成 TXT 失败:', error);
+                alert('生成 TXT 文件失败，请重试');
+            } finally {
+                hideLoading('generateDocument');
+            }
+        }
+
+        // 生成 XLSX 文件
+        function generateXlsx() {
+            showLoading('generateDocument', '正在生成 Excel 文件...');
+
+            try {
+                const rows = parseInt(document.getElementById('xlsxRows').value);
+                const cols = parseInt(document.getElementById('xlsxCols').value);
+                const customName = document.getElementById('customFileName').value.trim();
+
+                // 创建工作簿
+                const wb = XLSX.utils.book_new();
+                const data = [];
+
+                // 标题行
+                const headers = ['序号'];
+                for (let i = 1; i < cols; i++) {
+                    headers.push(`列${i}`);
+                }
+                data.push(headers);
+
+                // 数据行
+                for (let i = 1; i <= rows; i++) {
+                    const row = [i];
+                    for (let j = 1; j < cols; j++) {
+                        row.push(`数据 ${i}-${j}`);
+                    }
+                    data.push(row);
+                }
+
+                // 创建工作表
+                const ws = XLSX.utils.aoa_to_sheet(data);
+
+                // 设置列宽
+                const colWidths = [];
+                for (let i = 0; i < cols; i++) {
+                    colWidths.push({ wch: 15 });
+                }
+                ws['!cols'] = colWidths;
+
+                XLSX.utils.book_append_sheet(wb, ws, '测试数据');
+
+                // 生成文件
+                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                currentBlob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                currentFileName = customName || `test_excel_${rows}x${cols}.xlsx`;
+
+                displayPreview(currentBlob, 'document', {
+                    '文件类型': 'Excel 表格',
+                    '行数': rows + ' (含标题)',
+                    '列数': cols,
+                    '文件大小': (currentBlob.size / 1024).toFixed(2) + ' KB'
+                });
+            } catch (error) {
+                console.error('生成 Excel 失败:', error);
+                alert('生成 Excel 文件失败，请重试');
+            } finally {
+                hideLoading('generateDocument');
+            }
+        }
+
+        // 生成 DOCX 文件
+        async function generateDocx() {
+            showLoading('generateDocument', '正在生成 Word 文档...');
+
+            try {
+                const paras = parseInt(document.getElementById('docxParas').value);
+                const customName = document.getElementById('customFileName').value.trim();
+
+                // 检查 docx 库是否加载
+                if (typeof docx === 'undefined') {
+                    // 如果 docx 库未加载,生成一个简单的 RTF 格式
+                    let rtfContent = '{\\rtf1\\ansi\\deff0\n';
+                    rtfContent += '{\\fonttbl{\\f0 Microsoft YaHei;}}\n';
+                    rtfContent += '{\\colortbl;\\red0\\green0\\blue0;}\n';
+                    rtfContent += '\\fs28\\b 测试 Word 文档\\b0\\par\n';
+                    rtfContent += '\\fs20 生成时间: ' + new Date().toLocaleString() + '\\par\n';
+                    rtfContent += '总段落数: ' + paras + '\\par\\par\n';
+
+                    for (let i = 1; i <= paras; i++) {
+                        rtfContent += '\\fs24\\b 第 ' + i + ' 段\\b0\\par\n';
+                        rtfContent += '\\fs20 这是测试段落内容。Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\\par\\par\n';
+                    }
+
+                    rtfContent += '}';
+
+                    currentBlob = new Blob([rtfContent], { type: 'application/rtf' });
+                    currentFileName = customName || `test_word_${paras}paras.rtf`;
+
+                    displayPreview(currentBlob, 'document', {
+                        '文件类型': 'RTF 文档 (Word 兼容)',
+                        '段落数': paras,
+                        '文件大小': (currentBlob.size / 1024).toFixed(2) + ' KB'
+                    });
+                } else {
+                    // 使用 docx 库
+                    const paragraphs = [
+                        new docx.Paragraph({
+                            text: '测试 Word 文档',
+                            heading: docx.HeadingLevel.HEADING_1,
+                            alignment: docx.AlignmentType.CENTER
+                        }),
+                        new docx.Paragraph({
+                            text: `生成时间: ${new Date().toLocaleString()}`,
+                            spacing: { before: 200, after: 200 }
+                        }),
+                        new docx.Paragraph({
+                            text: `总段落数: ${paras}`,
+                            spacing: { after: 400 }
+                        })
+                    ];
+
+                    for (let i = 1; i <= paras; i++) {
+                        paragraphs.push(
+                            new docx.Paragraph({
+                                text: `第 ${i} 段`,
+                                heading: docx.HeadingLevel.HEADING_2
+                            }),
+                            new docx.Paragraph({
+                                text: '这是测试段落内容。Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.',
+                                spacing: { after: 200 }
+                            })
+                        );
+                    }
+
+                    const doc = new docx.Document({
+                        sections: [{
+                            properties: {},
+                            children: paragraphs
+                        }]
+                    });
+
+                    const blob = await docx.Packer.toBlob(doc);
+                    currentBlob = blob;
+                    currentFileName = customName || `test_word_${paras}paras.docx`;
+
+                    displayPreview(currentBlob, 'document', {
+                        '文件类型': 'Word 文档',
+                        '段落数': paras,
+                        '文件大小': (currentBlob.size / 1024).toFixed(2) + ' KB'
+                    });
+                }
+            } catch (error) {
+                console.error('生成 Word 失败:', error);
+                alert('生成 Word 文档失败: ' + error.message);
+            } finally {
+                hideLoading('generateDocument');
             }
         }
     </script>
